@@ -1,0 +1,1586 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Toza Uy — Interaktiv Platforma</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  /* ═══════════════════════════════════════════════════════
+     ORIGINAL CSS — 100% SAQLAB QO'YILGAN
+     ═══════════════════════════════════════════════════════ */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --green: #0B8457;
+    --green-dark: #06633F;
+    --green-light: #E8F5EE;
+    --amber: #F59E0B;
+    --blue: #3B82F6;
+    --red: #EF4444;
+    --success: #10B981;
+    --dark: #1E293B;
+    --text: #1A1D21;
+    --text2: #6B7280;
+    --text3: #9CA3AF;
+    --border: #E5E7EB;
+    --bg: #FAFBFC;
+    --white: #ffffff;
+    --font: 'Plus Jakarta Sans', sans-serif;
+  }
+
+  body {
+    font-family: var(--font);
+    background: #0f1117;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    gap: 0;
+  }
+
+  h1 {
+    color: #fff;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+
+  /* NAV TABS */
+  .tabs {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 720px;
+  }
+  .tab {
+    padding: 7px 14px;
+    border-radius: 20px;
+    border: 1px solid #333;
+    background: #1a1d24;
+    color: #888;
+    font-size: 12px;
+    font-family: var(--font);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .tab:hover { border-color: var(--green); color: var(--green); }
+  .tab.active { background: var(--green); border-color: var(--green); color: #fff; }
+
+  /* PHONE FRAME */
+  .phone {
+    width: 390px;
+    height: 844px;
+    background: var(--bg);
+    border-radius: 44px;
+    overflow: hidden;
+    box-shadow: 0 0 0 10px #1a1d24, 0 0 0 12px #2a2d34, 0 32px 80px rgba(0,0,0,0.6);
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  /* SCREEN */
+  .screen { display: none; width: 100%; height: 100%; overflow-y: auto; overflow-x: hidden; position: absolute; top: 0; left: 0; background: var(--bg); }
+  .screen.active { display: block; }
+  .screen::-webkit-scrollbar { display: none; }
+
+  /* ───── COMMON ───── */
+  .status-bar {
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    flex-shrink: 0;
+  }
+  .status-time { font-size: 14px; font-weight: 700; }
+  .status-icons { font-size: 13px; font-weight: 600; }
+  .status-bar.dark .status-time, .status-bar.dark .status-icons { color: #fff; }
+  .status-bar.light .status-time, .status-bar.light .status-icons { color: var(--text); }
+
+  .topbar {
+    height: 56px;
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    gap: 12px;
+    flex-shrink: 0;
+  }
+  .topbar-back { font-size: 20px; cursor: pointer; color: var(--text); background: none; border: none; font-family: var(--font); }
+  .topbar-title { font-size: 17px; font-weight: 700; color: var(--text); }
+  .topbar-right { margin-left: auto; font-size: 13px; font-weight: 600; color: var(--green); cursor: pointer; }
+
+  .bottom-nav {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 64px;
+    background: var(--white);
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+  }
+  .nav-item { display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; opacity: 0.4; }
+  .nav-item.active { opacity: 1; }
+  .nav-item span:first-child { font-size: 18px; }
+  .nav-item span:last-child { font-size: 10px; font-weight: 600; color: var(--text2); }
+  .nav-item.active span:last-child { color: var(--green); }
+
+  .scroll-area { padding-bottom: 80px; }
+
+  .section-title {
+    font-size: 17px; font-weight: 700; color: var(--text);
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0 20px; margin-bottom: 12px;
+  }
+  .section-title a { font-size: 13px; font-weight: 600; color: var(--green); cursor: pointer; }
+
+  .card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 14px 16px;
+  }
+
+  .btn {
+    width: 100%; height: 54px; border-radius: 14px; border: none;
+    font-size: 16px; font-weight: 700; cursor: pointer;
+    font-family: var(--font); transition: opacity 0.15s;
+  }
+  .btn:active { opacity: 0.85; }
+  .btn-primary { background: linear-gradient(135deg, var(--green), var(--green-dark)); color: #fff; }
+  .btn-secondary { background: transparent; border: 2px solid var(--green); color: var(--green); }
+  .btn-amber { background: linear-gradient(135deg, var(--amber), #D97706); color: #fff; }
+  .btn-disabled { background: var(--border); color: var(--text3); cursor: default; }
+  .btn-sm { height: 42px; font-size: 14px; border-radius: 12px; }
+
+  /* ───── SCREEN 0: WELCOME ───── */
+  #s0 { background: linear-gradient(160deg, var(--green-light) 0%, var(--bg) 60%); }
+  .welcome-logo {
+    width: 90px; height: 90px; border-radius: 24px;
+    background: linear-gradient(135deg, var(--green), var(--green-dark));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 42px; margin: 0 auto;
+    box-shadow: 0 8px 24px rgba(11,132,87,0.35);
+  }
+  .welcome-content { padding: 0 30px; text-align: center; }
+  .welcome-title { font-size: 32px; font-weight: 800; color: var(--text); margin-bottom: 8px; }
+  .welcome-sub { font-size: 14px; color: var(--text2); margin-bottom: 4px; }
+  .welcome-slogan { font-size: 13px; color: var(--text3); margin-bottom: 50px; }
+  .welcome-btns { display: flex; flex-direction: column; gap: 12px; }
+  .welcome-badge { margin-top: 28px; font-size: 12px; color: var(--text3); }
+
+  /* ───── SCREEN 1: HOME ───── */
+  .home-header {
+    background: linear-gradient(135deg, var(--green), var(--green-dark));
+    padding: 0 20px 32px;
+  }
+  .home-header-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+  .home-greeting { font-size: 13px; color: rgba(255,255,255,0.7); margin-bottom: 4px; }
+  .home-name { font-size: 20px; font-weight: 700; color: #fff; }
+  .notif-btn {
+    width: 40px; height: 40px; border-radius: 12px;
+    background: rgba(255,255,255,0.2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; cursor: pointer; border: none;
+  }
+  .search-bar {
+    height: 46px; border-radius: 14px;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.1);
+    display: flex; align-items: center;
+    padding: 0 14px; gap: 8px;
+    font-size: 14px; color: rgba(255,255,255,0.5);
+  }
+  .home-curve {
+    height: 32px; background: var(--bg);
+    border-radius: 24px 24px 0 0;
+    margin-top: -16px;
+  }
+  .quick-actions { display: flex; gap: 10px; padding: 0 20px; margin-bottom: 20px; }
+  .quick-btn {
+    flex: 1; height: 56px; border-radius: 16px; background: var(--white);
+    border: 1px solid var(--border); display: flex; align-items: center;
+    gap: 10px; padding: 0 12px; cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+  .quick-icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center; font-size: 16px;
+  }
+  .quick-label { font-size: 13px; font-weight: 600; color: var(--text); }
+
+  .services-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; padding: 0 20px; margin-bottom: 24px; }
+  .service-card {
+    background: var(--white); border: 1px solid var(--border); border-radius: 16px;
+    padding: 12px; display: flex; flex-direction: column; align-items: center;
+    gap: 6px; cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04); transition: transform 0.15s;
+  }
+  .service-card:active { transform: scale(0.96); }
+  .service-icon {
+    width: 48px; height: 48px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center; font-size: 22px;
+  }
+  .service-name { font-size: 12px; font-weight: 600; color: var(--text); text-align: center; }
+  .service-price { font-size: 11px; font-weight: 700; color: var(--green); }
+
+  .executor-list { display: flex; flex-direction: column; gap: 8px; padding: 0 20px; margin-bottom: 24px; }
+  .executor-card {
+    background: var(--white); border: 1px solid var(--border); border-radius: 16px;
+    padding: 12px 14px; display: flex; align-items: center; gap: 12px; cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+  .executor-avatar {
+    width: 48px; height: 48px; border-radius: 14px;
+    background: var(--green-light); display: flex; align-items: center; justify-content: center; font-size: 22px;
+    flex-shrink: 0;
+  }
+  .executor-info { flex: 1; }
+  .executor-name { font-size: 14px; font-weight: 600; color: var(--text); }
+  .executor-type { font-size: 12px; color: var(--text2); }
+  .executor-stats { text-align: right; }
+  .executor-rating { font-size: 13px; font-weight: 700; color: var(--text); }
+  .executor-jobs { font-size: 11px; color: var(--text2); }
+
+  /* ───── SCREEN 2: BOOKING ───── */
+  .booking-service-card {
+    margin: 12px 20px;
+    background: rgba(11,132,87,0.07);
+    border: 1px solid rgba(11,132,87,0.2);
+    border-radius: 16px; padding: 14px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .booking-icon {
+    width: 52px; height: 52px; border-radius: 14px;
+    background: rgba(11,132,87,0.12);
+    display: flex; align-items: center; justify-content: center; font-size: 22px;
+  }
+  .field-label { font-size: 13px; font-weight: 600; color: var(--text); padding: 0 20px; margin-bottom: 8px; margin-top: 16px; }
+  .input-box {
+    margin: 0 20px;
+    height: 46px; border-radius: 12px;
+    background: var(--white); border: 1.5px solid var(--border);
+    display: flex; align-items: center; padding: 0 14px;
+    font-size: 14px; color: var(--text);
+  }
+  .time-chips { display: flex; gap: 8px; padding: 0 20px; flex-wrap: wrap; }
+  .chip {
+    height: 38px; padding: 0 16px; border-radius: 10px;
+    border: 1.5px solid var(--border); background: var(--white);
+    font-size: 13px; font-weight: 600; color: var(--text);
+    cursor: pointer; font-family: var(--font); transition: all 0.15s;
+  }
+  .chip.selected { background: var(--green); border-color: var(--green); color: #fff; }
+  .counter { display: flex; align-items: center; gap: 16px; padding: 0 20px; }
+  .counter-btn {
+    width: 40px; height: 40px; border-radius: 12px;
+    background: var(--white); border: 1.5px solid var(--border);
+    font-size: 20px; font-weight: 700; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font); transition: all 0.15s;
+  }
+  .counter-btn:hover { border-color: var(--green); color: var(--green); }
+  .counter-val { font-size: 24px; font-weight: 700; color: var(--green); min-width: 32px; text-align: center; }
+  .price-summary {
+    margin: 16px 20px;
+    background: var(--green-light);
+    border: 1px solid rgba(11,132,87,0.15);
+    border-radius: 16px; padding: 16px;
+  }
+  .price-row { display: flex; justify-content: space-between; font-size: 13px; color: var(--text2); margin-bottom: 8px; }
+  .price-row.total { font-size: 15px; font-weight: 700; color: var(--text); border-top: 1px solid rgba(11,132,87,0.2); padding-top: 10px; margin-top: 4px; }
+  .price-row.total span:last-child { color: var(--green); }
+  .booking-btn-wrap { padding: 0 20px 32px; margin-top: 16px; }
+
+  /* ───── SCREEN 3: TRACKING ───── */
+  .order-header {
+    margin: 12px 20px;
+    background: var(--green-light);
+    border: 1px solid rgba(11,132,87,0.15);
+    border-radius: 14px; padding: 14px 16px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .order-num-label { font-size: 12px; color: var(--text2); margin-bottom: 4px; }
+  .order-num { font-size: 16px; font-weight: 700; color: var(--green); }
+  .badge {
+    padding: 5px 12px; border-radius: 8px; font-size: 12px; font-weight: 700;
+  }
+  .badge-amber { background: rgba(245,158,11,0.15); color: var(--amber); }
+  .badge-green { background: rgba(16,185,129,0.15); color: var(--success); }
+  .map-placeholder {
+    margin: 0 20px; height: 140px; border-radius: 16px;
+    background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    border: 1px solid rgba(11,132,87,0.15);
+    font-size: 36px; gap: 8px;
+    overflow: hidden; position: relative;
+  }
+  .map-placeholder span { font-size: 13px; font-weight: 600; color: var(--green-dark); }
+  #leaflet-map { position: absolute; inset: 0; z-index: 1; }
+  .stepper { padding: 16px 20px; display: flex; flex-direction: column; gap: 0; }
+  .step { display: flex; align-items: flex-start; gap: 14px; }
+  .step-left { display: flex; flex-direction: column; align-items: center; }
+  .step-circle {
+    width: 32px; height: 32px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; flex-shrink: 0;
+  }
+  .step-circle.done { background: var(--green); color: #fff; }
+  .step-circle.current { background: var(--green); color: #fff; }
+  .step-circle.todo { background: var(--border); color: var(--text3); }
+  .step-line { width: 2px; height: 24px; background: var(--border); margin: 3px 0; }
+  .step-line.done { background: var(--green); }
+  .step-content { padding-bottom: 20px; }
+  .step-title { font-size: 14px; font-weight: 600; color: var(--text); }
+  .step-title.todo { color: var(--text3); }
+  .step-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .executor-mini {
+    margin: 0 20px;
+    background: var(--white); border: 1px solid var(--border); border-radius: 16px;
+    padding: 12px 14px; display: flex; align-items: center; gap: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+  .call-btn {
+    width: 38px; height: 38px; border-radius: 10px;
+    background: rgba(16,185,129,0.1);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; cursor: pointer; border: none; margin-left: auto;
+  }
+  .rate-btn-wrap { padding: 16px 20px 32px; }
+
+  /* ───── SCREEN 4: RATING ───── */
+  .rating-avatar {
+    width: 72px; height: 72px; border-radius: 20px;
+    background: var(--green-light);
+    display: flex; align-items: center; justify-content: center; font-size: 36px;
+    margin: 0 auto;
+  }
+  .stars-row { display: flex; justify-content: center; gap: 8px; margin: 16px 0 6px; }
+  .star {
+    font-size: 36px; cursor: pointer; transition: transform 0.15s;
+    color: var(--border); filter: grayscale(1);
+  }
+  .star.selected { color: var(--amber); filter: none; transform: scale(1.15); }
+  .rating-label { text-align: center; font-size: 14px; color: var(--text2); margin-bottom: 16px; }
+  .tags-wrap { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 20px; margin-bottom: 20px; }
+  .tag {
+    padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600;
+    border: 1.5px solid var(--border); background: var(--white); color: var(--text);
+    cursor: pointer; font-family: var(--font); transition: all 0.15s;
+  }
+  .tag.selected { background: var(--green); border-color: var(--green); color: #fff; }
+  .textarea-box {
+    margin: 0 20px 20px;
+    height: 90px; border-radius: 14px;
+    background: var(--white); border: 1.5px solid var(--border);
+    padding: 14px; font-size: 14px; color: var(--text3);
+    display: flex; align-items: flex-start;
+  }
+  .rating-btn-wrap { padding: 0 20px 32px; }
+
+  /* ───── SCREEN 5: EXECUTOR DASHBOARD ───── */
+  .exec-header {
+    background: linear-gradient(135deg, #1E293B, #0F172A);
+    padding: 0 20px 32px;
+  }
+  .exec-top { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .exec-avatar {
+    width: 44px; height: 44px; border-radius: 14px;
+    background: rgba(255,255,255,0.1);
+    display: flex; align-items: center; justify-content: center; font-size: 20px;
+  }
+  .exec-name-wrap { flex: 1; }
+  .exec-hi { font-size: 12px; color: rgba(255,255,255,0.5); }
+  .exec-name { font-size: 16px; font-weight: 700; color: #fff; }
+  .online-badge {
+    padding: 6px 14px; border-radius: 16px;
+    background: rgba(16,185,129,0.15); border: 1.5px solid var(--success);
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 700; color: var(--success); cursor: pointer;
+  }
+  .online-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); }
+  .exec-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .stat-card {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 14px; padding: 12px; text-align: center;
+  }
+  .stat-val { font-size: 18px; font-weight: 800; margin-bottom: 4px; }
+  .stat-label { font-size: 10px; color: rgba(255,255,255,0.45); }
+  .exec-curve { height: 32px; background: var(--bg); border-radius: 24px 24px 0 0; margin-top: -16px; }
+
+  .chart-card { margin: 0 20px 20px; }
+  .chart-bars { display: flex; align-items: flex-end; gap: 6px; height: 60px; margin-top: 10px; }
+  .bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .bar { width: 100%; border-radius: 4px; background: rgba(11,132,87,0.25); transition: height 0.3s; }
+  .bar.active { background: var(--green); }
+  .bar-day { font-size: 10px; color: var(--text3); }
+
+  .order-card {
+    margin: 0 20px 10px;
+    background: var(--white); border: 1.5px solid rgba(11,132,87,0.3); border-radius: 16px;
+    padding: 14px 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+  .order-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+  .order-type { font-size: 14px; font-weight: 700; color: var(--text); }
+  .order-price { font-size: 15px; font-weight: 800; color: var(--green); }
+  .order-meta { font-size: 12px; color: var(--text2); margin-bottom: 4px; }
+  .order-btns { display: flex; gap: 8px; margin-top: 10px; }
+  .accept-btn {
+    flex: 1; height: 36px; border-radius: 10px;
+    background: var(--green); border: none; color: #fff;
+    font-size: 13px; font-weight: 700; cursor: pointer; font-family: var(--font);
+  }
+  .reject-btn {
+    flex: 1; height: 36px; border-radius: 10px;
+    background: var(--white); border: 1.5px solid var(--border); color: var(--text2);
+    font-size: 13px; font-weight: 600; cursor: pointer; font-family: var(--font);
+  }
+
+  /* ───── SCREEN 6: ACTIVE ORDER ───── */
+  .active-order-header {
+    margin: 12px 20px; border-radius: 18px;
+    background: linear-gradient(135deg, var(--green), var(--green-dark));
+    padding: 16px 20px;
+  }
+  .aoh-row { display: flex; justify-content: space-between; align-items: flex-start; }
+  .aoh-label { font-size: 11px; color: rgba(255,255,255,0.6); margin-bottom: 4px; }
+  .aoh-val { font-size: 18px; font-weight: 800; color: #fff; }
+  .aoh-price { font-size: 20px; font-weight: 800; color: #fff; }
+  .aoh-currency { font-size: 12px; color: rgba(255,255,255,0.7); }
+  .aoh-meta { display: flex; gap: 24px; margin-top: 12px; }
+  .aoh-meta-item { }
+  .client-card {
+    margin: 0 20px 16px;
+    background: var(--white); border: 1px solid var(--border); border-radius: 16px;
+    padding: 12px 14px; display: flex; align-items: center; gap: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+  .client-avatar {
+    width: 44px; height: 44px; border-radius: 12px;
+    background: rgba(59,130,246,0.1);
+    display: flex; align-items: center; justify-content: center; font-size: 20px;
+  }
+  .contact-btns { margin-left: auto; display: flex; gap: 8px; }
+  .contact-btn {
+    width: 38px; height: 38px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; cursor: pointer; border: none;
+  }
+  .contact-btn.phone { background: rgba(16,185,129,0.1); }
+  .contact-btn.chat { background: rgba(59,130,246,0.1); }
+
+  .status-steps { display: flex; gap: 8px; padding: 0 20px; margin-bottom: 16px; }
+  .status-step {
+    flex: 1; height: 60px; border-radius: 12px;
+    background: var(--white); border: 1.5px solid var(--border);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 4px; cursor: pointer; transition: all 0.15s; font-family: var(--font);
+  }
+  .status-step.active { background: var(--green); border-color: var(--green); }
+  .status-step.active span { color: #fff !important; }
+  .status-step span:first-child { font-size: 16px; }
+  .status-step span:last-child { font-size: 11px; font-weight: 600; color: var(--text); }
+
+  .timer-card {
+    margin: 0 20px 16px;
+    background: rgba(245,158,11,0.07);
+    border: 1px solid rgba(245,158,11,0.2);
+    border-radius: 16px; padding: 16px;
+    text-align: center;
+  }
+  .timer-label { font-size: 12px; color: var(--text2); margin-bottom: 8px; }
+  .timer-val { font-size: 32px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; }
+
+  .checklist { padding: 0 20px; margin-bottom: 20px; }
+  .check-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 0; border-bottom: 1px solid var(--border);
+  }
+  .check-item:last-child { border-bottom: none; }
+  .check-box {
+    width: 22px; height: 22px; border-radius: 6px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 12px; font-weight: 700; color: #fff;
+    border: 1.5px solid var(--border); background: var(--white);
+    transition: all 0.15s;
+  }
+  .check-box.checked { background: var(--green); border-color: var(--green); }
+  .check-text { font-size: 14px; color: var(--text); }
+  .check-text.done { text-decoration: line-through; color: var(--text3); }
+  .complete-btn-wrap { padding: 0 20px 32px; }
+
+  /* ═══════════════════════════════════════════════════════
+     YANGI QISMLAR — Dizaynga mos uslubda
+     ═══════════════════════════════════════════════════════ */
+
+  /* AI Badge */
+  .ai-badge { display: inline-flex; align-items: center; gap: 4px; background: linear-gradient(135deg,rgba(139,92,246,.1),rgba(59,130,246,.1)); border: 1px solid rgba(139,92,246,.2); padding: 3px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; color: #7C3AED; }
+
+  /* AI Matching */
+  .ai-match-wrap { margin: 0 20px 16px; padding: 14px; background: linear-gradient(135deg,rgba(139,92,246,.05),rgba(59,130,246,.05)); border: 1px solid rgba(139,92,246,.15); border-radius: 16px; }
+  .ai-match-head { font-size: 13px; font-weight: 700; color: #7C3AED; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+  .ai-match-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid rgba(139,92,246,.08); }
+  .ai-match-row:last-child { border: none; }
+  .ai-rank { width: 22px; height: 22px; border-radius: 7px; background: rgba(139,92,246,.12); color: #7C3AED; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .ai-score { font-size: 12px; font-weight: 800; color: #7C3AED; margin-left: auto; }
+
+  /* Admin Panel */
+  .admin-head { background: linear-gradient(135deg,#6366F1,#4338CA); padding: 20px 20px 32px; }
+  .admin-title-text { font-size: 18px; font-weight: 800; color: #fff; }
+  .admin-subtitle { font-size: 12px; color: rgba(255,255,255,.55); margin-top: 4px; }
+  .admin-kpi { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 16px; }
+  .admin-kpi-card { background: rgba(255,255,255,.12); border-radius: 14px; padding: 12px; text-align: center; }
+  .admin-kpi-val { font-size: 20px; font-weight: 800; color: #fff; }
+  .admin-kpi-label { font-size: 10px; color: rgba(255,255,255,.5); margin-top: 2px; }
+  .admin-curve { height: 24px; background: var(--bg); border-radius: 24px 24px 0 0; margin-top: -12px; }
+  .admin-item { margin: 0 20px 8px; padding: 12px 14px; background: var(--white); border: 1px solid var(--border); border-radius: 14px; display: flex; align-items: center; gap: 12px; }
+  .admin-item-info { flex: 1; }
+  .admin-item-main { font-size: 13px; font-weight: 600; color: var(--text); }
+  .admin-item-sub { font-size: 11px; color: var(--text2); }
+  .admin-badge { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 8px; cursor: pointer; border: none; font-family: var(--font); }
+  .admin-toggle { width: 44px; height: 24px; border-radius: 12px; border: none; cursor: pointer; position: relative; transition: background .2s; }
+  .admin-toggle.on { background: var(--green); }
+  .admin-toggle.off { background: var(--border); }
+  .admin-toggle::after { content: ''; position: absolute; top: 2px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: left .2s; }
+  .admin-toggle.on::after { left: 22px; }
+  .admin-toggle.off::after { left: 2px; }
+
+  /* History Tabs */
+  .hist-tabs { display: flex; gap: 8px; padding: 12px 20px; }
+  .hist-tab { flex: 1; height: 38px; border-radius: 10px; background: var(--white); border: 1.5px solid var(--border); font-size: 12px; font-weight: 600; color: var(--text); cursor: pointer; font-family: var(--font); transition: all .15s; }
+  .hist-tab.active { background: var(--green); border-color: var(--green); color: #fff; }
+  .hist-item { margin: 0 20px 8px; padding: 14px; background: var(--white); border: 1px solid var(--border); border-radius: 14px; }
+  .hist-top { display: flex; justify-content: space-between; margin-bottom: 4px; }
+  .hist-service { font-size: 14px; font-weight: 700; color: var(--text); }
+  .hist-price { font-size: 14px; font-weight: 800; color: var(--green); }
+  .hist-meta { font-size: 12px; color: var(--text2); }
+  .hist-bottom { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+
+  /* Chat */
+  .chat-area { padding: 12px 20px 80px; display: flex; flex-direction: column; gap: 6px; min-height: calc(100% - 56px - 60px); }
+  .bubble { max-width: 76%; padding: 10px 14px; border-radius: 16px; font-size: 14px; line-height: 1.45; word-break: break-word; }
+  .bubble.out { align-self: flex-end; background: var(--green); color: #fff; border-bottom-right-radius: 4px; }
+  .bubble.in  { align-self: flex-start; background: var(--white); border: 1px solid var(--border); color: var(--text); border-bottom-left-radius: 4px; }
+  .bubble-time { font-size: 10px; color: var(--text3); margin-top: 1px; }
+  .bubble-time.right { text-align: right; }
+  .chat-bar { position: absolute; bottom: 0; left: 0; right: 0; height: 60px; background: var(--white); border-top: 1px solid var(--border); display: flex; align-items: center; padding: 0 14px; gap: 10px; }
+  .chat-input { flex: 1; height: 38px; border-radius: 19px; border: 1.5px solid var(--border); background: var(--bg); padding: 0 14px; font-size: 14px; font-family: var(--font); outline: none; }
+  .chat-input:focus { border-color: var(--green); }
+  .chat-send { width: 38px; height: 38px; border-radius: 50%; background: var(--green); border: none; color: #fff; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
+  /* Geo Toast */
+  .geo-toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #1a1d24; color: #fff; padding: 12px 20px; border-radius: 14px; font-size: 13px; font-weight: 600; font-family: var(--font); box-shadow: 0 8px 32px rgba(0,0,0,.4); z-index: 9999; display: flex; align-items: center; gap: 8px; animation: gSlide .3s ease; transition: opacity .3s; }
+  @keyframes gSlide { from { opacity: 0; transform: translateX(-50%) translateY(-20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--text3); font-size: 13px; }
+
+  /* ───── AUTH SCREENS ───── */
+  .auth-screen { background: linear-gradient(160deg, var(--green-light) 0%, var(--bg) 50%, #fff 100%); }
+  .auth-wrap { padding: 0 28px; }
+  .auth-logo { width: 72px; height: 72px; border-radius: 20px; background: linear-gradient(135deg,var(--green),var(--green-dark)); display: flex; align-items: center; justify-content: center; font-size: 34px; margin: 0 auto; box-shadow: 0 6px 20px rgba(11,132,87,.3); }
+  .auth-title { font-size: 24px; font-weight: 800; color: var(--text); text-align: center; margin-top: 16px; }
+  .auth-sub { font-size: 14px; color: var(--text2); text-align: center; margin-top: 4px; margin-bottom: 28px; }
+  .auth-field { margin-bottom: 14px; }
+  .auth-label { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 6px; display: block; }
+  .auth-input {
+    width: 100%; height: 50px; border-radius: 14px;
+    background: var(--white); border: 1.5px solid var(--border);
+    padding: 0 16px; font-size: 15px; font-family: var(--font);
+    color: var(--text); outline: none; transition: border-color .2s;
+  }
+  .auth-input:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(11,132,87,.1); }
+  .auth-input::placeholder { color: var(--text3); }
+  .auth-input.error { border-color: var(--red); }
+  .auth-error { font-size: 12px; color: var(--red); margin-top: 4px; display: none; padding-left: 4px; }
+  .auth-error.show { display: block; }
+  .auth-btn-wrap { margin-top: 20px; }
+  .auth-divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; }
+  .auth-divider-line { flex: 1; height: 1px; background: var(--border); }
+  .auth-divider-text { font-size: 12px; color: var(--text3); font-weight: 600; }
+  .auth-link { text-align: center; margin-top: 16px; font-size: 14px; color: var(--text2); }
+  .auth-link a { color: var(--green); font-weight: 700; cursor: pointer; text-decoration: none; }
+  .auth-link a:hover { text-decoration: underline; }
+  .auth-phone-row { display: flex; gap: 8px; }
+  .auth-phone-prefix {
+    width: 72px; height: 50px; border-radius: 14px;
+    background: var(--white); border: 1.5px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 600; color: var(--text); flex-shrink: 0;
+  }
+  .auth-phone-prefix span { font-size: 16px; margin-right: 4px; }
+  .auth-terms { font-size: 11px; color: var(--text3); text-align: center; margin-top: 16px; line-height: 1.5; }
+  .auth-terms a { color: var(--green); }
+  .user-info-bar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 16px; background: rgba(11,132,87,.06);
+    border-bottom: 1px solid rgba(11,132,87,.1);
+    font-size: 12px; color: var(--text2);
+  }
+  .user-info-bar strong { color: var(--text); font-weight: 700; }
+  .logout-btn { margin-left: auto; font-size: 11px; color: var(--red); cursor: pointer; font-weight: 600; background: none; border: none; font-family: var(--font); }
+</style>
+</head>
+<body>
+
+
+
+<div class="phone">
+
+  <!-- ══════ AUTH: LOGIN ══════ -->
+  <div class="screen active auth-screen" id="sLogin">
+    <div class="status-bar light"><span class="status-time">9:41</span><span class="status-icons">5G 🔋</span></div>
+    <div style="height:40px"></div>
+    <div class="auth-wrap">
+      <div class="auth-logo">✨</div>
+      <div class="auth-title">Toza Uy</div>
+      <div class="auth-sub">Hisobingizga kiring</div>
+
+      <div class="auth-field">
+        <label class="auth-label">📱 Telefon raqam</label>
+        <div class="auth-phone-row">
+          <div class="auth-phone-prefix"><span>🇺🇿</span>+998</div>
+          <input class="auth-input" id="login-phone" type="tel" placeholder="90 123 45 67" maxlength="12">
+        </div>
+      </div>
+
+      <div class="auth-field">
+        <label class="auth-label">🔒 Parol</label>
+        <input class="auth-input" id="login-pass" type="password" placeholder="Parolni kiriting">
+      </div>
+
+      <div class="auth-error" id="login-error">Telefon yoki parol noto'g'ri</div>
+
+      <div class="auth-btn-wrap">
+        <button class="btn btn-primary" onclick="doLogin()">Kirish →</button>
+      </div>
+
+      <div class="auth-divider">
+        <div class="auth-divider-line"></div>
+        <div class="auth-divider-text">yoki</div>
+        <div class="auth-divider-line"></div>
+      </div>
+
+      <button class="btn btn-secondary btn-sm" onclick="showAuth('register')">Ro'yxatdan o'tish</button>
+
+      <div class="auth-terms">Davom etish orqali siz <a>Foydalanish shartlari</a> va <a>Maxfiylik siyosati</a>ga rozilik bildirasiz</div>
+    </div>
+  </div>
+
+  <!-- ══════ AUTH: REGISTER ══════ -->
+  <div class="screen auth-screen" id="sRegister">
+    <div class="status-bar light"><span class="status-time">9:41</span><span class="status-icons">5G 🔋</span></div>
+    <div style="height:24px"></div>
+    <div class="auth-wrap">
+      <div class="auth-logo">📝</div>
+      <div class="auth-title">Ro'yxatdan o'tish</div>
+      <div class="auth-sub">Yangi hisob yaratish</div>
+
+      <div class="auth-field">
+        <label class="auth-label">👤 Ism va familiya</label>
+        <input class="auth-input" id="reg-name" type="text" placeholder="Masalan: Jamshid Aliyev">
+      </div>
+
+      <div class="auth-field">
+        <label class="auth-label">📱 Telefon raqam</label>
+        <div class="auth-phone-row">
+          <div class="auth-phone-prefix"><span>🇺🇿</span>+998</div>
+          <input class="auth-input" id="reg-phone" type="tel" placeholder="90 123 45 67" maxlength="12">
+        </div>
+      </div>
+
+      <div class="auth-field">
+        <label class="auth-label">🔒 Parol</label>
+        <input class="auth-input" id="reg-pass" type="password" placeholder="Kamida 6 ta belgi">
+      </div>
+
+      <div class="auth-field">
+        <label class="auth-label">🔒 Parolni tasdiqlang</label>
+        <input class="auth-input" id="reg-pass2" type="password" placeholder="Parolni qayta kiriting">
+      </div>
+
+      <div class="auth-field">
+        <label class="auth-label">👥 Kim sifatida ro'yxatdan o'tasiz?</label>
+        <div class="time-chips" data-group="regRole" style="padding:0">
+          <button class="chip selected" data-v="client" style="flex:1;text-align:center">🏠 Mijoz</button>
+          <button class="chip" data-v="executor" style="flex:1;text-align:center">🧹 Ijrochi</button>
+        </div>
+      </div>
+
+      <div class="auth-error" id="reg-error">Ma'lumotlarni to'ldiring</div>
+
+      <div class="auth-btn-wrap">
+        <button class="btn btn-primary" onclick="doRegister()">Ro'yxatdan o'tish ✓</button>
+      </div>
+
+      <div class="auth-link">Hisobingiz bormi? <a onclick="showAuth('login')">Kirish</a></div>
+    </div>
+  </div>
+
+  <!-- ══════ 0: WELCOME (Role Selection) ══════ -->
+  <div class="screen" id="s0">
+    <div class="status-bar light"><span class="status-time">9:41</span><span class="status-icons">5G 🔋</span></div>
+    <div style="height:60px"></div>
+    <div class="welcome-logo">✨</div>
+    <div style="height:30px"></div>
+    <div class="welcome-content">
+      <div class="welcome-title">Toza Uy</div>
+      <div class="welcome-sub">Cleaning xizmatlari marketplace platformasi</div>
+      <div class="welcome-slogan">Tez • Qulay • Ishonchli</div>
+      <div id="welcome-user" style="font-size:14px;font-weight:600;color:var(--green);margin-bottom:20px"></div>
+      <div class="welcome-btns">
+        <button class="btn btn-primary" onclick="enterAs('client')">🏠 &nbsp;Mijoz sifatida kirish</button>
+        <button class="btn btn-secondary" onclick="enterAs('executor')">🧹 &nbsp;Ijrochi sifatida kirish</button>
+        <button class="btn btn-amber btn-sm" style="margin-top:4px" onclick="go(7)">🛡 &nbsp;Admin panelga o'tish</button>
+      </div>
+      <div class="welcome-badge">🛡 Barcha ijrochilar verifikatsiyadan o'tgan</div>
+      <div id="geo-info" style="margin-top:14px;font-size:11px;color:var(--text3)"></div>
+      <div style="margin-top:12px"><a onclick="doLogout()" style="font-size:13px;color:var(--red);cursor:pointer;font-weight:600">Chiqish (Logout)</a></div>
+    </div>
+  </div>
+
+  <!-- ══════ 1: CLIENT HOME ══════ -->
+  <div class="screen" id="s1">
+    <div class="home-header">
+      <div class="status-bar dark" style="padding:0"><span class="status-time">9:41</span><span class="status-icons">5G 🔋</span></div>
+      <div class="home-header-top">
+        <div>
+          <div class="home-greeting" id="home-greeting">Xush kelibsiz!</div>
+          <div class="home-name" id="home-name">Toza Uy 🏠</div>
+        </div>
+        <button class="notif-btn" onclick="go(8)">🔔</button>
+      </div>
+      <div class="search-bar">🔍 &nbsp;Xizmat yoki ijrochi qidiring...</div>
+    </div>
+    <div class="home-curve"></div>
+    <div class="scroll-area">
+      <div class="quick-actions">
+        <div class="quick-btn" onclick="selectService(0)"><div class="quick-icon" style="background:#FEF3C7">⚡</div><span class="quick-label">Tez buyurtma</span></div>
+        <div class="quick-btn" onclick="go(8)"><div class="quick-icon" style="background:var(--green-light)">📋</div><span class="quick-label">Buyurtmalar</span></div>
+      </div>
+      <div class="section-title">Xizmatlar <a>Hammasi →</a></div>
+      <div class="services-grid" id="svc-grid"></div>
+      <div class="section-title">Top ijrochilar <a>Hammasi →</a></div>
+      <div class="executor-list" id="exec-list"></div>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-item active"><span>🏠</span><span style="color:var(--green)">Bosh sahifa</span></div>
+      <div class="nav-item" onclick="go(8)"><span>📋</span><span>Buyurtmalar</span></div>
+      <div class="nav-item" onclick="go(9)"><span>💬</span><span>Chat</span></div>
+      <div class="nav-item"><span>👤</span><span>Profil</span></div>
+    </div>
+  </div>
+
+  <!-- ══════ 2: BOOKING ══════ -->
+  <div class="screen" id="s2">
+    <div class="topbar">
+      <button class="topbar-back" onclick="go(1)">←</button>
+      <span class="topbar-title" id="bk-title">Uy tozalash</span>
+    </div>
+    <div class="scroll-area">
+      <div class="booking-service-card">
+        <div class="booking-icon" id="bk-icon">🏠</div>
+        <div>
+          <div style="font-size:16px;font-weight:700;color:var(--text)" id="bk-name">Uy tozalash</div>
+          <div style="font-size:13px;color:var(--text2);margin-top:3px">Professional tozalash xizmati</div>
+        </div>
+      </div>
+      <div class="field-label">📍 Manzil</div>
+      <div class="input-box" id="bk-address">📍 Toshkent, Chilonzor t. 7-kvartal</div>
+      <div class="field-label">📅 Sana</div>
+      <div class="time-chips" data-group="date">
+        <button class="chip selected" data-v="today">Bugun</button>
+        <button class="chip" data-v="tomorrow">Ertaga</button>
+        <button class="chip" id="dc2"></button>
+        <button class="chip" id="dc3"></button>
+      </div>
+      <div class="field-label">⏰ Vaqt</div>
+      <div class="time-chips" data-group="time">
+        <button class="chip" data-v="09:00">09:00</button>
+        <button class="chip" data-v="10:00">10:00</button>
+        <button class="chip" data-v="11:00">11:00</button>
+        <button class="chip" data-v="12:00">12:00</button>
+        <button class="chip selected" data-v="14:00">14:00</button>
+        <button class="chip" data-v="15:00">15:00</button>
+        <button class="chip" data-v="16:00">16:00</button>
+        <button class="chip" data-v="17:00">17:00</button>
+      </div>
+      <div class="field-label">🧹 Tozalash turi</div>
+      <div class="time-chips" data-group="ctype">
+        <button class="chip selected" data-v="standard">Oddiy</button>
+        <button class="chip" data-v="deep">Chuqur ×1.5</button>
+        <button class="chip" data-v="general">Umumiy ×2</button>
+      </div>
+      <div class="field-label">🏠 Xonalar soni</div>
+      <div class="counter">
+        <button class="counter-btn" onclick="changeCount(-1)">−</button>
+        <span class="counter-val" id="room-count">2</span>
+        <button class="counter-btn" onclick="changeCount(1)">+</button>
+      </div>
+      <div class="field-label">📝 Qo'shimcha izoh</div>
+      <div class="input-box" contenteditable="true" style="color:var(--text3)" id="bk-note">Masalan: Oshxona va hammomga alohida...</div>
+      <div class="price-summary">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px"><span style="font-size:14px;font-weight:700;color:var(--text)">💡 AI Narxlash</span><span class="ai-badge">🤖 AI</span></div>
+        <div class="price-row"><span id="pr-label">Asosiy narx</span><span id="pr-base">160 000 so'm</span></div>
+        <div class="price-row"><span>Masofa koeff.</span><span id="pr-dist">×1.0</span></div>
+        <div class="price-row"><span>Tozalash turi</span><span id="pr-type">×1.0 (Oddiy)</span></div>
+        <div class="price-row"><span>Platforma (10%)</span><span id="pr-fee">16 000 so'm</span></div>
+        <div class="price-row total"><span>Jami</span><span id="pr-total">176 000 so'm</span></div>
+      </div>
+      <div class="ai-match-wrap" id="ai-match-wrap">
+        <div class="ai-match-head">🤖 AI Matching — Tavsiya etilgan ijrochilar</div>
+        <div id="ai-match-list"></div>
+      </div>
+      <div class="booking-btn-wrap"><button class="btn btn-primary" onclick="placeOrder()">Buyurtma berish ✨</button></div>
+    </div>
+  </div>
+
+  <!-- ══════ 3: TRACKING ══════ -->
+  <div class="screen" id="s3">
+    <div class="topbar">
+      <button class="topbar-back" onclick="go(1)">←</button>
+      <span class="topbar-title">Buyurtma holati</span>
+    </div>
+    <div class="scroll-area">
+      <div class="order-header">
+        <div><div class="order-num-label">Buyurtma raqami</div><div class="order-num" id="tr-num">#CL-2847</div></div>
+        <div class="badge badge-amber" id="tr-badge">Jarayonda</div>
+      </div>
+      <div class="map-placeholder" id="map-wrap">
+        <div id="leaflet-map"></div>
+        <span id="map-fallback" style="z-index:0;position:relative">📍 Xarita yuklanmoqda...</span>
+      </div>
+      <div class="stepper">
+        <div class="step"><div class="step-left"><div class="step-circle done">✓</div><div class="step-line done"></div></div><div class="step-content"><div class="step-title">Buyurtma qabul qilindi</div><div class="step-sub">Ijrochi qidirilmoqda...</div></div></div>
+        <div class="step"><div class="step-left"><div class="step-circle done">✓</div><div class="step-line done"></div></div><div class="step-content"><div class="step-title">Ijrochi topildi</div><div class="step-sub" id="tr-exec-sub">Aziza Karimova — 4.9 ⭐</div></div></div>
+        <div class="step"><div class="step-left"><div class="step-circle current">✓</div><div class="step-line"></div></div><div class="step-content"><div class="step-title">Ijrochi yo'lda</div><div class="step-sub">Taxminan 15 daqiqa</div></div></div>
+        <div class="step"><div class="step-left"><div class="step-circle todo">●</div><div class="step-line"></div></div><div class="step-content"><div class="step-title todo">Tozalash jarayoni</div><div class="step-sub">Hozir bajarilmoqda...</div></div></div>
+        <div class="step"><div class="step-left"><div class="step-circle todo">☆</div></div><div class="step-content"><div class="step-title todo">Bajarildi!</div><div class="step-sub">Xizmatni baholang</div></div></div>
+      </div>
+      <div class="executor-mini">
+        <div class="executor-avatar" id="tr-exec-av">👩‍🦰</div>
+        <div class="executor-info"><div class="executor-name" id="tr-exec-name">Aziza Karimova</div><div class="executor-type" id="tr-exec-detail">⭐ 4.9 • 234 ish bajargan</div></div>
+        <button class="call-btn" onclick="go(9)">💬</button>
+        <button class="call-btn">📞</button>
+      </div>
+      <div class="rate-btn-wrap"><button class="btn btn-amber" onclick="go(4)">Xizmatni baholash ⭐</button></div>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-item" onclick="go(1)"><span>🏠</span><span>Bosh sahifa</span></div>
+      <div class="nav-item active"><span>📋</span><span style="color:var(--green)">Buyurtmalar</span></div>
+      <div class="nav-item" onclick="go(9)"><span>💬</span><span>Chat</span></div>
+      <div class="nav-item"><span>👤</span><span>Profil</span></div>
+    </div>
+  </div>
+
+  <!-- ══════ 4: RATING ══════ -->
+  <div class="screen" id="s4">
+    <div class="topbar"><button class="topbar-back" onclick="go(3)">←</button><span class="topbar-title">Baholash</span></div>
+    <div class="scroll-area" style="padding-top:20px">
+      <div class="rating-avatar">👩‍🦰</div>
+      <div style="text-align:center;margin-top:12px"><div style="font-size:18px;font-weight:700;color:var(--text)">Aziza Karimova</div><div style="font-size:13px;color:var(--text2);margin-top:4px">Uy tozalash xizmati</div></div>
+      <div class="stars-row" id="stars-row">
+        <span class="star selected" onclick="setRating(1)">★</span><span class="star selected" onclick="setRating(2)">★</span><span class="star selected" onclick="setRating(3)">★</span><span class="star selected" onclick="setRating(4)">★</span><span class="star" onclick="setRating(5)">★</span>
+      </div>
+      <div class="rating-label" id="rating-label">Yaxshi 😊</div>
+      <div class="tags-wrap">
+        <button class="tag selected" onclick="toggleTag(this)">Toza ishladi</button><button class="tag" onclick="toggleTag(this)">Vaqtida keldi</button><button class="tag selected" onclick="toggleTag(this)">Xushmuomala</button><button class="tag" onclick="toggleTag(this)">Professional</button><button class="tag" onclick="toggleTag(this)">Tez bajaradi</button><button class="tag selected" onclick="toggleTag(this)">Tavsiya qilaman</button>
+      </div>
+      <div class="textarea-box" contenteditable="true">Fikr va takliflaringizni yozing...</div>
+      <div class="rating-btn-wrap"><button class="btn btn-primary" onclick="submitRating()">Yuborish ✓</button></div>
+    </div>
+  </div>
+
+  <!-- ══════ 5: EXECUTOR DASHBOARD ══════ -->
+  <div class="screen" id="s5">
+    <div class="exec-header">
+      <div class="status-bar dark" style="padding:0;margin-bottom:12px"><span class="status-time">9:41</span><span class="status-icons">5G 🔋</span></div>
+      <div class="exec-top">
+        <div class="exec-avatar">👨</div>
+        <div class="exec-name-wrap"><div class="exec-hi">Salom!</div><div class="exec-name">Bobur Toshmatov</div></div>
+        <div class="online-badge" onclick="toggleOnline()" id="onl-badge"><div class="online-dot" id="onl-dot"></div><span id="onl-text">Online</span></div>
+      </div>
+      <div class="exec-stats">
+        <div class="stat-card"><div class="stat-val" style="color:var(--success)" id="ex-income">340 000</div><div class="stat-label">Bugungi daromad</div></div>
+        <div class="stat-card"><div class="stat-val" style="color:var(--amber)" id="ex-done">4</div><div class="stat-label">Bajarilgan</div></div>
+        <div class="stat-card"><div class="stat-val" style="color:var(--amber)" id="ex-rating">4.8</div><div class="stat-label">Reyting</div></div>
+      </div>
+    </div>
+    <div class="exec-curve"></div>
+    <div class="scroll-area">
+      <div style="padding:0 20px 12px">
+        <div class="card chart-card" style="padding:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><span style="font-size:14px;font-weight:700;color:var(--text)">Haftalik daromad</span><span style="font-size:14px;font-weight:800;color:var(--green)">1 840 000 so'm</span></div>
+          <div class="chart-bars">
+            <div class="bar-wrap"><div class="bar" style="height:40%"></div><span class="bar-day">Du</span></div>
+            <div class="bar-wrap"><div class="bar" style="height:65%"></div><span class="bar-day">Se</span></div>
+            <div class="bar-wrap"><div class="bar" style="height:50%"></div><span class="bar-day">Ch</span></div>
+            <div class="bar-wrap"><div class="bar" style="height:80%"></div><span class="bar-day">Pa</span></div>
+            <div class="bar-wrap"><div class="bar" style="height:70%"></div><span class="bar-day">Ju</span></div>
+            <div class="bar-wrap"><div class="bar active" style="height:95%"></div><span class="bar-day">Sh</span></div>
+            <div class="bar-wrap"><div class="bar" style="height:55%"></div><span class="bar-day">Ya</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="section-title">Yangi buyurtmalar <span id="new-cnt" style="background:rgba(239,68,68,.1);color:var(--red);padding:4px 10px;border-radius:8px;font-size:12px;font-weight:700">0 ta</span></div>
+      <div id="ex-orders"></div>
+      <div style="padding:16px 20px"><button class="btn btn-secondary btn-sm" onclick="go(8)">📋 Buyurtmalar tarixi</button></div>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-item active"><span>🏠</span><span style="color:var(--green)">Asosiy</span></div>
+      <div class="nav-item" onclick="go(8)"><span>📋</span><span>Buyurtmalar</span></div>
+      <div class="nav-item" onclick="go(9)"><span>💬</span><span>Chat</span></div>
+      <div class="nav-item"><span>👤</span><span>Profil</span></div>
+    </div>
+  </div>
+
+  <!-- ══════ 6: ACTIVE ORDER ══════ -->
+  <div class="screen" id="s6">
+    <div class="topbar"><button class="topbar-back" onclick="go(5)">←</button><span class="topbar-title">Faol buyurtma</span></div>
+    <div class="scroll-area">
+      <div class="active-order-header">
+        <div class="aoh-row"><div><div class="aoh-label">Buyurtma</div><div class="aoh-val" id="ao-num">#CL-2847</div></div><div style="text-align:right"><div class="aoh-price" id="ao-price">264 000</div><div class="aoh-currency">so'm</div></div></div>
+        <div class="aoh-meta"><div class="aoh-meta-item"><div class="aoh-label">Xizmat turi</div><div style="font-size:14px;font-weight:600;color:#fff" id="ao-type">Uy tozalash</div></div><div class="aoh-meta-item"><div class="aoh-label">Vaqt</div><div style="font-size:14px;font-weight:600;color:#fff" id="ao-time">14:00</div></div></div>
+      </div>
+      <div class="client-card">
+        <div class="client-avatar">🧑</div>
+        <div><div style="font-size:14px;font-weight:600;color:var(--text)">Jamshid Aliyev</div><div style="font-size:12px;color:var(--text2)">📍 Chilonzor, 7-kvartal</div></div>
+        <div class="contact-btns"><button class="contact-btn chat" onclick="go(9)">💬</button><button class="contact-btn phone">📞</button></div>
+      </div>
+      <div style="padding:0 20px;margin-bottom:10px"><div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:8px">Holatni yangilash</div></div>
+      <div class="status-steps">
+        <div class="status-step" onclick="setStep(0)" id="step0"><span>📍</span><span>Yo'lda</span></div>
+        <div class="status-step active" onclick="setStep(1)" id="step1"><span>✨</span><span>Boshlandi</span></div>
+        <div class="status-step" onclick="setStep(2)" id="step2"><span>✓</span><span>Bajarildi</span></div>
+      </div>
+      <div class="timer-card"><div class="timer-label">Ish vaqti</div><div class="timer-val" id="timer">01:24:35</div></div>
+      <div style="padding:0 20px;margin-bottom:8px"><div style="font-size:14px;font-weight:700;color:var(--text)">Bajarish ro'yxati</div></div>
+      <div class="checklist">
+        <div class="check-item"><div class="check-box checked" onclick="toggleCheck(this)">✓</div><span class="check-text done">Oshxona tozalash</span></div>
+        <div class="check-item"><div class="check-box checked" onclick="toggleCheck(this)">✓</div><span class="check-text done">Xonalar tozalash</span></div>
+        <div class="check-item"><div class="check-box" onclick="toggleCheck(this)"></div><span class="check-text">Hammom tozalash</span></div>
+        <div class="check-item"><div class="check-box" onclick="toggleCheck(this)"></div><span class="check-text">Derazalar artish</span></div>
+      </div>
+      <div class="complete-btn-wrap"><button class="btn btn-disabled" id="complete-btn" onclick="completeOrder()">Avval ishni bajaring</button></div>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-item" onclick="go(5)"><span>🏠</span><span>Asosiy</span></div>
+      <div class="nav-item active"><span>📋</span><span style="color:var(--green)">Buyurtmalar</span></div>
+      <div class="nav-item" onclick="go(9)"><span>💬</span><span>Chat</span></div>
+      <div class="nav-item"><span>👤</span><span>Profil</span></div>
+    </div>
+  </div>
+
+  <!-- ══════ 7: ADMIN ══════ -->
+  <div class="screen" id="s7">
+    <div class="admin-head">
+      <div class="status-bar dark" style="padding:0;margin-bottom:12px"><span class="status-time">9:41</span><span class="status-icons">5G 🔋</span></div>
+      <div class="admin-title-text">🛡 Admin Panel</div>
+      <div class="admin-subtitle">Platformani boshqarish markazi</div>
+      <div class="admin-kpi">
+        <div class="admin-kpi-card"><div class="admin-kpi-val" id="adm-orders">0</div><div class="admin-kpi-label">Buyurtmalar</div></div>
+        <div class="admin-kpi-card"><div class="admin-kpi-val" id="adm-execs">6</div><div class="admin-kpi-label">Ijrochilar</div></div>
+        <div class="admin-kpi-card"><div class="admin-kpi-val" id="adm-rev">0</div><div class="admin-kpi-label">Daromad (ming)</div></div>
+      </div>
+    </div>
+    <div class="admin-curve"></div>
+    <div class="scroll-area">
+      <div class="section-title" style="margin-top:8px">Buyurtmalar</div>
+      <div id="adm-order-list"></div>
+      <div class="section-title" style="margin-top:16px">Ijrochilar</div>
+      <div id="adm-exec-list"></div>
+      <div style="padding:16px 20px"><button class="btn btn-secondary btn-sm" onclick="go(0)">← Orqaga</button></div>
+    </div>
+  </div>
+
+  <!-- ══════ 8: HISTORY ══════ -->
+  <div class="screen" id="s8">
+    <div class="topbar"><button class="topbar-back" onclick="goBack()">←</button><span class="topbar-title">Buyurtmalar tarixi</span></div>
+    <div class="scroll-area">
+      <div class="hist-tabs">
+        <button class="hist-tab active" onclick="filterHist('all',this)">Hammasi</button>
+        <button class="hist-tab" onclick="filterHist('active',this)">Faol</button>
+        <button class="hist-tab" onclick="filterHist('done',this)">Bajarilgan</button>
+      </div>
+      <div id="hist-list"></div>
+    </div>
+  </div>
+
+  <!-- ══════ 9: CHAT ══════ -->
+  <div class="screen" id="s9">
+    <div class="topbar"><button class="topbar-back" onclick="goBack()">←</button><span class="topbar-title">💬 Chat</span></div>
+    <div class="chat-area" id="chat-area"></div>
+    <div class="chat-bar">
+      <input class="chat-input" id="chat-inp" type="text" placeholder="Xabar yozing..." onkeydown="if(event.key==='Enter')sendMsg()">
+      <button class="chat-send" onclick="sendMsg()">➤</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ═══════════════════════════════════════════
+   TOZA UY — PLATFORM ENGINE v2.0
+   ═══════════════════════════════════════════ */
+
+// ╔═══════════════════════════════════╗
+// ║  1. APP STATE + DATABASE          ║
+// ╚═══════════════════════════════════╝
+const APP = {
+  screen: 0, prev: 0, role: 'client',
+  roomCount: 2, ratingVal: 4, timerSecs: 5075,
+  timerInt: null, svcIdx: 0, cleanType: 'standard',
+  orderSeq: 2847, online: true,
+  lat: 41.2995, lng: 69.2401, geoReady: false,
+  leafMap: null,
+};
+
+const SERVICES = [
+  { name:'Uy tozalash',    icon:'🏠', base:80000,  bg:'rgba(11,132,87,0.1)'  },
+  { name:'Ofis tozalash',  icon:'💼', base:150000, bg:'rgba(59,130,246,0.1)' },
+  { name:'Oyna yuvish',    icon:'🪟', base:50000,  bg:'rgba(139,92,246,0.1)' },
+  { name:'Gilam yuvish',   icon:'🧺', base:40000,  bg:'rgba(245,158,11,0.1)' },
+  { name:'Mebel tozalash', icon:'🛋', base:60000,  bg:'rgba(239,68,68,0.1)'  },
+  { name:'Umumiy tozalash', icon:'✨', base:200000, bg:'rgba(16,185,129,0.1)' },
+];
+
+const EXECUTORS = [
+  { id:1, name:'Aziza Karimova',  av:'👩‍🦰', spec:'Uy tozalash',    rat:4.9, jobs:234, lat:41.310, lng:69.255, on:true },
+  { id:2, name:'Bobur Toshmatov', av:'👨',   spec:'Ofis tozalash',  rat:4.8, jobs:189, lat:41.295, lng:69.220, on:true },
+  { id:3, name:'Dilnoza Rahimova',av:'👩',   spec:'Umumiy tozalash',rat:4.9, jobs:312, lat:41.285, lng:69.210, on:true },
+  { id:4, name:'Sardor Alimov',   av:'👨‍🦱', spec:'Oyna yuvish',    rat:4.7, jobs:156, lat:41.320, lng:69.280, on:true },
+  { id:5, name:'Madina Nosirova', av:'👩‍🦱', spec:'Gilam yuvish',   rat:4.6, jobs:98,  lat:41.275, lng:69.245, on:true },
+  { id:6, name:'Jasur Karimov',   av:'🧑',   spec:'Mebel tozalash', rat:4.5, jobs:67,  lat:41.305, lng:69.260, on:false},
+];
+
+let ORDERS = [];
+let CHATS = [];
+
+// ╔═══════════════════════════════════╗
+// ║  2. localStorage PERSISTENCE      ║
+// ╚═══════════════════════════════════╝
+function save() {
+  localStorage.setItem('tozauy2', JSON.stringify({
+    orders: ORDERS, chats: CHATS, execs: EXECUTORS.map(e=>({id:e.id,on:e.on,rat:e.rat,jobs:e.jobs})),
+    seq: APP.orderSeq, rc: APP.roomCount, lat: APP.lat, lng: APP.lng,
+    role: APP.role, online: APP.online, timer: APP.timerSecs
+  }));
+}
+function load() {
+  try {
+    const d = JSON.parse(localStorage.getItem('tozauy2'));
+    if(!d) return;
+    ORDERS = d.orders||[]; CHATS = d.chats||[];
+    APP.orderSeq=d.seq||2847; APP.roomCount=d.rc||2;
+    APP.lat=d.lat||41.2995; APP.lng=d.lng||69.2401;
+    APP.role=d.role||'client'; APP.online=d.online!==false;
+    APP.timerSecs=d.timer||5075;
+    if(d.execs) d.execs.forEach(se=>{const e=EXECUTORS.find(x=>x.id===se.id); if(e){e.on=se.on;e.rat=se.rat;e.jobs=se.jobs;}});
+  } catch(e){}
+}
+
+// ╔═══════════════════════════════════╗
+// ║  3. NAVIGATION + AUTH             ║
+// ╚═══════════════════════════════════╝
+const AUTH = { user: null };
+
+function hideAllScreens() {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+}
+
+function showAuth(type) {
+  hideAllScreens();
+  document.getElementById(type==='register'?'sRegister':'sLogin').classList.add('active');
+}
+
+function go(n) {
+  if (!AUTH.user && n !== 0) { showAuth('login'); return; }
+  APP.prev = APP.screen;
+  hideAllScreens();
+  const scr = document.getElementById('s'+n);
+  if (scr) scr.classList.add('active');
+  APP.screen = n;
+  if(n===6) startTimer(); else stopTimer();
+  if(n===3) initMap();
+  if(n===5) renderExecOrders();
+  if(n===7) renderAdmin();
+  if(n===8) renderHist('all');
+  if(n===9) renderChat();
+  if(n===1 && AUTH.user) {
+    document.getElementById('home-greeting').textContent='Xush kelibsiz!';
+    document.getElementById('home-name').textContent=AUTH.user.name+' 👋';
+  }
+}
+function goBack() { go(APP.role==='executor'?5:1); }
+function enterAs(role) { APP.role=role; save(); go(role==='client'?1:5); requestGeo(); }
+
+// ── Auth: Users DB ──
+function getUsers(){ try{return JSON.parse(localStorage.getItem('tozauy_users'))||[];}catch(e){return[];} }
+function saveUsers(u){ localStorage.setItem('tozauy_users',JSON.stringify(u)); }
+function saveSession(){ if(AUTH.user) localStorage.setItem('tozauy_session',JSON.stringify(AUTH.user)); else localStorage.removeItem('tozauy_session'); }
+function loadSession(){ try{const s=JSON.parse(localStorage.getItem('tozauy_session'));if(s&&s.phone){AUTH.user=s;return true;}}catch(e){}return false; }
+
+// ── Login ──
+function doLogin(){
+  const phEl=document.getElementById('login-phone'),pwEl=document.getElementById('login-pass'),erEl=document.getElementById('login-error');
+  const phone=phEl.value.replace(/\s/g,''),pass=pwEl.value;
+  erEl.classList.remove('show');phEl.classList.remove('error');pwEl.classList.remove('error');
+  if(!phone||phone.length<9){phEl.classList.add('error');erEl.textContent='Telefon raqamni to\'g\'ri kiriting';erEl.classList.add('show');return;}
+  if(!pass||pass.length<4){pwEl.classList.add('error');erEl.textContent='Parolni kiriting';erEl.classList.add('show');return;}
+  const user=getUsers().find(u=>u.phone===phone&&u.password===pass);
+  if(!user){phEl.classList.add('error');pwEl.classList.add('error');erEl.textContent='Telefon yoki parol noto\'g\'ri';erEl.classList.add('show');return;}
+  AUTH.user={name:user.name,phone:user.phone,role:user.role};APP.role=user.role;saveSession();save();
+  toast('✅ Xush kelibsiz, '+user.name+'!');
+  document.getElementById('welcome-user').textContent='👤 '+user.name;
+  if(user.role==='client'){go(1);requestGeo();}else if(user.role==='executor'){go(5);requestGeo();}else go(0);
+}
+
+// ── Register ──
+function doRegister(){
+  const nmEl=document.getElementById('reg-name'),phEl=document.getElementById('reg-phone'),pwEl=document.getElementById('reg-pass'),pw2El=document.getElementById('reg-pass2'),erEl=document.getElementById('reg-error');
+  const roleChip=document.querySelector('[data-group="regRole"] .chip.selected');
+  const role=roleChip?roleChip.dataset.v:'client';
+  const name=nmEl.value.trim(),phone=phEl.value.replace(/\s/g,''),pass=pwEl.value,pass2=pw2El.value;
+  erEl.classList.remove('show');[nmEl,phEl,pwEl,pw2El].forEach(el=>el.classList.remove('error'));
+  if(!name||name.length<2){nmEl.classList.add('error');erEl.textContent='Ism va familiyani kiriting';erEl.classList.add('show');return;}
+  if(!phone||phone.length<9){phEl.classList.add('error');erEl.textContent='Telefon raqamni to\'g\'ri kiriting';erEl.classList.add('show');return;}
+  if(!pass||pass.length<6){pwEl.classList.add('error');erEl.textContent='Parol kamida 6 ta belgidan iborat bo\'lishi kerak';erEl.classList.add('show');return;}
+  if(pass!==pass2){pw2El.classList.add('error');erEl.textContent='Parollar mos kelmadi';erEl.classList.add('show');return;}
+  const users=getUsers();
+  if(users.find(u=>u.phone===phone)){phEl.classList.add('error');erEl.textContent='Bu raqam allaqachon ro\'yxatdan o\'tgan';erEl.classList.add('show');return;}
+  users.push({name,phone,password:pass,role,createdAt:new Date().toISOString()});saveUsers(users);
+  AUTH.user={name,phone,role};APP.role=role;saveSession();save();
+  toast('✅ Ro\'yxatdan o\'tdingiz, '+name+'!');
+  document.getElementById('welcome-user').textContent='👤 '+name;
+  if(role==='client'){go(1);requestGeo();}else{go(5);requestGeo();}
+}
+
+// ── Logout ──
+function doLogout(){
+  AUTH.user=null;localStorage.removeItem('tozauy_session');
+  toast('👋 Tizimdan chiqdingiz');showAuth('login');
+}
+
+// ╔═══════════════════════════════════╗
+// ║  4. GEOLOCATION + XAVFSIZLIK      ║
+// ╚═══════════════════════════════════╝
+function requestGeo() {
+  if(!navigator.geolocation) { toast('⚠️ Geolokatsiya qo\'llab-quvvatlanmaydi'); return; }
+  toast('📍 Joylashuv aniqlanmoqda...');
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      APP.lat = pos.coords.latitude;
+      APP.lng = pos.coords.longitude;
+      APP.geoReady = true;
+      save();
+      toast('✅ Joylashuv aniqlandi!');
+      const el = document.getElementById('geo-info');
+      if(el) el.textContent = `📍 ${APP.lat.toFixed(4)}, ${APP.lng.toFixed(4)}`;
+      recalcPrice(); renderAIMatch();
+    },
+    () => { toast('📍 Toshkent (default) tanlandi'); },
+    { enableHighAccuracy: true, timeout: 8000 }
+  );
+}
+function toast(msg) {
+  document.querySelectorAll('.geo-toast').forEach(t=>t.remove());
+  const d = document.createElement('div'); d.className='geo-toast'; d.textContent=msg;
+  document.body.appendChild(d);
+  setTimeout(()=>{d.style.opacity='0';setTimeout(()=>d.remove(),300)},2500);
+}
+
+// ╔═══════════════════════════════════╗
+// ║  5. LEAFLET.JS MAP                ║
+// ╚═══════════════════════════════════╝
+function initMap() {
+  setTimeout(()=>{
+    const c = document.getElementById('leaflet-map'); if(!c) return;
+    if(APP.leafMap){ APP.leafMap.remove(); APP.leafMap=null; }
+    const fb = document.getElementById('map-fallback'); if(fb) fb.style.display='none';
+    try {
+      APP.leafMap = L.map('leaflet-map',{zoomControl:false,attributionControl:false}).setView([APP.lat,APP.lng],14);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(APP.leafMap);
+      L.marker([APP.lat,APP.lng]).addTo(APP.leafMap).bindPopup('📍 Sizning manzilingiz').openPopup();
+      const best = getAIMatch()[0];
+      if(best) L.marker([best.lat,best.lng]).addTo(APP.leafMap).bindPopup('🧹 '+best.name);
+      setTimeout(()=>APP.leafMap.invalidateSize(),200);
+    } catch(e){ if(fb) fb.style.display=''; }
+  },120);
+}
+
+// ╔═══════════════════════════════════╗
+// ║  6. AI PRICING ENGINE             ║
+// ╚═══════════════════════════════════╝
+function haversine(a1,o1,a2,o2){const R=6371,d1=(a2-a1)*Math.PI/180,d2=(o2-o1)*Math.PI/180,a=Math.sin(d1/2)**2+Math.cos(a1*Math.PI/180)*Math.cos(a2*Math.PI/180)*Math.sin(d2/2)**2;return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}
+
+function typeCoeff(){ return {standard:1,deep:1.5,general:2}[APP.cleanType]||1; }
+function distCoeff(){
+  const best = getAIMatch()[0];
+  const d = best ? haversine(APP.lat,APP.lng,best.lat,best.lng) : 3;
+  if(d<2) return 1; if(d<5) return 1.1; if(d<10) return 1.2; return 1.35;
+}
+function calcPrice(){
+  const s=SERVICES[APP.svcIdx], base=APP.roomCount*s.base, tc=typeCoeff(), dc=distCoeff();
+  const sub=Math.round(base*tc*dc), fee=Math.round(sub*0.1);
+  return {base,tc,dc,sub,fee,total:sub+fee};
+}
+function recalcPrice(){
+  const p=calcPrice(), s=SERVICES[APP.svcIdx];
+  const f=n=>n.toLocaleString('uz');
+  const tNames={standard:'Oddiy',deep:'Chuqur',general:'Umumiy'};
+  document.getElementById('pr-label').textContent=`${APP.roomCount} xona × ${f(s.base)} so'm`;
+  document.getElementById('pr-base').textContent=f(p.base)+' so\'m';
+  document.getElementById('pr-dist').textContent='×'+p.dc.toFixed(1);
+  document.getElementById('pr-type').textContent='×'+p.tc.toFixed(1)+' ('+tNames[APP.cleanType]+')';
+  document.getElementById('pr-fee').textContent=f(p.fee)+' so\'m';
+  document.getElementById('pr-total').textContent=f(p.total)+' so\'m';
+}
+
+// ╔═══════════════════════════════════╗
+// ║  7. AI MATCHING ENGINE            ║
+// ╚═══════════════════════════════════╝
+function getAIMatch(){
+  return EXECUTORS.filter(e=>e.on).map(e=>{
+    const d=haversine(APP.lat,APP.lng,e.lat,e.lng);
+    const ds=Math.max(0,100-d*10), rs=e.rat*20, js=Math.min(e.jobs/5,50);
+    return {...e, dist:d, score:Math.round(ds*.4+rs*.4+js*.2)};
+  }).sort((a,b)=>b.score-a.score).slice(0,3);
+}
+function renderAIMatch(){
+  const m=getAIMatch(), el=document.getElementById('ai-match-list');
+  el.innerHTML=m.map((x,i)=>`<div class="ai-match-row"><div class="ai-rank">${i+1}</div><span style="font-size:20px">${x.av}</span><div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--text)">${x.name}</div><div style="font-size:11px;color:var(--text2)">⭐ ${x.rat} • ${x.dist.toFixed(1)} km • ${x.jobs} ish</div></div><div class="ai-score">${x.score}%</div></div>`).join('');
+}
+
+// ╔═══════════════════════════════════╗
+// ║  8. ROOM COUNTER + CHIPS          ║
+// ╚═══════════════════════════════════╝
+function changeCount(d){
+  APP.roomCount=Math.max(1,Math.min(10,APP.roomCount+d));
+  document.getElementById('room-count').textContent=APP.roomCount;
+  recalcPrice(); save();
+}
+document.addEventListener('click',e=>{
+  if(!e.target.classList.contains('chip')||!e.target.closest('.time-chips')) return;
+  const g=e.target.closest('.time-chips'), grp=g.dataset.group;
+  g.querySelectorAll('.chip').forEach(c=>c.classList.remove('selected'));
+  e.target.classList.add('selected');
+  if(grp==='ctype'){ APP.cleanType=e.target.dataset.v||'standard'; recalcPrice(); }
+});
+
+// ╔═══════════════════════════════════╗
+// ║  9. STARS + TAGS + STEPS          ║
+// ╚═══════════════════════════════════╝
+const starLabels=['','Yomon 😞','Qoniqarsiz 😕','O\'rtacha 😐','Yaxshi 😊','Ajoyib 🤩'];
+function setRating(n){ APP.ratingVal=n; document.querySelectorAll('.star').forEach((s,i)=>s.classList.toggle('selected',i<n)); document.getElementById('rating-label').textContent=starLabels[n]; }
+function toggleTag(el){ el.classList.toggle('selected'); }
+function setStep(n){
+  document.querySelectorAll('.status-step').forEach((s,i)=>s.classList.toggle('active',i===n));
+  const btn=document.getElementById('complete-btn');
+  if(n===2){ btn.className='btn btn-primary'; btn.textContent='Buyurtmani yakunlash ✓'; }
+  else { btn.className='btn btn-disabled'; btn.textContent='Avval ishni bajaring'; }
+}
+function toggleCheck(box){ const c=box.classList.toggle('checked'); box.textContent=c?'✓':''; box.nextElementSibling.classList.toggle('done',c); }
+
+// ╔═══════════════════════════════════╗
+// ║  10. TIMER                        ║
+// ╚═══════════════════════════════════╝
+function startTimer(){ stopTimer(); APP.timerInt=setInterval(()=>{APP.timerSecs++;const h=String(Math.floor(APP.timerSecs/3600)).padStart(2,'0'),m=String(Math.floor((APP.timerSecs%3600)/60)).padStart(2,'0'),s=String(APP.timerSecs%60).padStart(2,'0');const el=document.getElementById('timer');if(el)el.textContent=h+':'+m+':'+s;},1000);}
+function stopTimer(){ clearInterval(APP.timerInt); }
+
+// ╔═══════════════════════════════════╗
+// ║  11. ONLINE TOGGLE                ║
+// ╚═══════════════════════════════════╝
+function toggleOnline(){
+  APP.online=!APP.online; save();
+  document.getElementById('onl-dot').style.background=APP.online?'var(--success)':'var(--text3)';
+  document.getElementById('onl-text').textContent=APP.online?'Online':'Offline';
+  const b=document.getElementById('onl-badge');
+  b.style.borderColor=APP.online?'var(--success)':'var(--text3)';
+  b.style.color=APP.online?'var(--success)':'var(--text3)';
+}
+
+// ╔═══════════════════════════════════╗
+// ║  12. ORDER MANAGEMENT             ║
+// ╚═══════════════════════════════════╝
+function placeOrder(){
+  const s=SERVICES[APP.svcIdx], p=calcPrice(), m=getAIMatch(), best=m[0];
+  APP.orderSeq++;
+  const order={
+    id:'CL-'+APP.orderSeq, svc:s.name, icon:s.icon, rooms:APP.roomCount,
+    ctype:APP.cleanType, price:p.total, status:'active',
+    exec:best?best.name:'Qidirilmoqda...', execAv:best?best.av:'⏳',
+    execRat:best?best.rat:0, execJobs:best?best.jobs:0,
+    date:new Date().toLocaleDateString('uz'), time:'14:00',
+    addr:document.getElementById('bk-address').textContent, rating:null
+  };
+  ORDERS.push(order); save();
+  // Tracking sahifasini yangilash
+  document.getElementById('tr-num').textContent='#'+order.id;
+  document.getElementById('tr-exec-sub').textContent=order.exec+' — '+order.execRat+' ⭐';
+  document.getElementById('tr-exec-name').textContent=order.exec;
+  document.getElementById('tr-exec-av').textContent=order.execAv;
+  document.getElementById('tr-exec-detail').textContent='⭐ '+order.execRat+' • '+order.execJobs+' ish bajargan';
+  go(3); toast('✅ Buyurtma muvaffaqiyatli yaratildi!');
+}
+function completeOrder(){
+  if(document.getElementById('complete-btn').classList.contains('btn-disabled')) return;
+  const o=ORDERS.filter(x=>x.status==='active').pop();
+  if(o){ o.status='done'; save(); }
+  toast('✅ Buyurtma yakunlandi!'); go(5);
+}
+function submitRating(){
+  const o=ORDERS.filter(x=>x.status==='done'&&!x.rating).pop();
+  if(o){ o.rating=APP.ratingVal; save(); }
+  toast('⭐ Bahoyingiz uchun rahmat!'); go(1);
+}
+function acceptExecOrder(id){
+  const o=ORDERS.find(x=>x.id===id);
+  if(o){ document.getElementById('ao-num').textContent='#'+o.id; document.getElementById('ao-price').textContent=o.price.toLocaleString('uz'); document.getElementById('ao-type').textContent=o.svc; }
+  go(6);
+}
+function rejectExecOrder(id){ ORDERS=ORDERS.filter(x=>x.id!==id); save(); renderExecOrders(); toast('❌ Rad etildi'); }
+
+// ╔═══════════════════════════════════╗
+// ║  13. RENDERS                      ║
+// ╚═══════════════════════════════════╝
+function renderServices(){
+  document.getElementById('svc-grid').innerHTML=SERVICES.map((s,i)=>`<div class="service-card" onclick="selectService(${i})"><div class="service-icon" style="background:${s.bg}">${s.icon}</div><div class="service-name">${s.name}</div><div class="service-price">${s.base.toLocaleString('uz')}</div></div>`).join('');
+}
+function selectService(i){
+  APP.svcIdx=i; const s=SERVICES[i];
+  document.getElementById('bk-title').textContent=s.name;
+  document.getElementById('bk-icon').textContent=s.icon;
+  document.getElementById('bk-name').textContent=s.name;
+  recalcPrice(); renderAIMatch(); go(2);
+}
+function renderExecutors(){
+  document.getElementById('exec-list').innerHTML=EXECUTORS.filter(e=>e.on).sort((a,b)=>b.rat-a.rat).slice(0,3).map(e=>`<div class="executor-card"><div class="executor-avatar">${e.av}</div><div class="executor-info"><div class="executor-name">${e.name}</div><div class="executor-type">${e.spec}</div></div><div class="executor-stats"><div class="executor-rating">⭐ ${e.rat}</div><div class="executor-jobs">${e.jobs} ish</div></div></div>`).join('');
+}
+function renderExecOrders(){
+  const active=ORDERS.filter(o=>o.status==='active');
+  const list=active.length?active.slice(-3).reverse():[
+    {id:'CL-2847',svc:'Uy tozalash',icon:'🏠',price:264000,addr:'📍 Chilonzor, 7-kvartal',time:'14:00'},
+    {id:'CL-2848',svc:'Oyna yuvish',icon:'🪟',price:110000,addr:'📍 Yunusobod, 4-kvartal',time:'16:00'},
+    {id:'CL-2849',svc:'Ofis tozalash',icon:'💼',price:330000,addr:'📍 Mirzo Ulug\'bek t.',time:'Ertaga 09:00'}
+  ];
+  document.getElementById('new-cnt').textContent=list.length+' ta';
+  document.getElementById('ex-orders').innerHTML=list.map(o=>`<div class="order-card"><div class="order-card-top"><div><div class="order-type">${o.svc}</div><div class="order-meta">#${o.id} • ${haversine(APP.lat,APP.lng,41.31,69.25).toFixed(1)} km</div><div class="order-meta">${o.addr||''} &nbsp;⏰ ${o.time||'14:00'}</div></div><div class="order-price">${(o.price||0).toLocaleString('uz')}</div></div><div class="order-btns"><button class="accept-btn" onclick="acceptExecOrder('${o.id}')">Qabul qilish ✓</button><button class="reject-btn" onclick="rejectExecOrder('${o.id}')">Rad etish</button></div></div>`).join('');
+}
+
+// ╔═══════════════════════════════════╗
+// ║  14. ADMIN PANEL                  ║
+// ╚═══════════════════════════════════╝
+function renderAdmin(){
+  document.getElementById('adm-orders').textContent=ORDERS.length;
+  document.getElementById('adm-execs').textContent=EXECUTORS.length;
+  document.getElementById('adm-rev').textContent=Math.round(ORDERS.reduce((s,o)=>s+(o.price||0),0)/1000);
+  // Buyurtmalar
+  const ol=document.getElementById('adm-order-list');
+  ol.innerHTML=ORDERS.length?ORDERS.slice().reverse().map(o=>`<div class="admin-item"><div class="admin-item-info"><div class="admin-item-main">${o.icon} #${o.id} — ${o.svc}</div><div class="admin-item-sub">${o.exec} • ${(o.price||0).toLocaleString('uz')} so'm • ${o.date||''}</div></div><button class="admin-badge" style="background:${o.status==='active'?'rgba(245,158,11,.15)':'rgba(16,185,129,.15)'};color:${o.status==='active'?'var(--amber)':'var(--success)'}" onclick="toggleOrderStatus('${o.id}')">${o.status==='active'?'Faol':'Bajarildi'}</button></div>`).join(''):'<div class="empty-state">Hali buyurtmalar yo\'q</div>';
+  // Ijrochilar
+  document.getElementById('adm-exec-list').innerHTML=EXECUTORS.map((e,i)=>`<div class="admin-item"><span style="font-size:20px">${e.av}</span><div class="admin-item-info"><div class="admin-item-main">${e.name}</div><div class="admin-item-sub">⭐ ${e.rat} • ${e.jobs} ish • ${e.spec}</div></div><button class="admin-toggle ${e.on?'on':'off'}" onclick="toggleExec(${i})"></button></div>`).join('');
+}
+function toggleOrderStatus(id){ const o=ORDERS.find(x=>x.id===id); if(o){ o.status=o.status==='active'?'done':'active'; save(); renderAdmin(); } }
+function toggleExec(i){ EXECUTORS[i].on=!EXECUTORS[i].on; save(); renderAdmin(); renderExecutors(); }
+
+// ╔═══════════════════════════════════╗
+// ║  15. ORDER HISTORY                ║
+// ╚═══════════════════════════════════╝
+function renderHist(f){
+  let list=ORDERS.slice().reverse();
+  if(f==='active') list=list.filter(o=>o.status==='active');
+  if(f==='done') list=list.filter(o=>o.status==='done');
+  const el=document.getElementById('hist-list');
+  el.innerHTML=list.length?list.map(o=>`<div class="hist-item"><div class="hist-top"><div class="hist-service">${o.icon} ${o.svc}</div><div class="hist-price">${(o.price||0).toLocaleString('uz')} so'm</div></div><div class="hist-meta">#${o.id} • ${o.date||'Bugun'} • ${o.exec}</div><div class="hist-bottom"><span class="admin-badge" style="background:${o.status==='active'?'rgba(245,158,11,.15)':'rgba(16,185,129,.15)'};color:${o.status==='active'?'var(--amber)':'var(--success)'}">${o.status==='active'?'Jarayonda':'Bajarildi'}</span><span style="font-size:12px;color:var(--amber)">${o.rating?'⭐'.repeat(o.rating):''}</span></div></div>`).join(''):'<div class="empty-state">Bu bo\'limda buyurtmalar yo\'q</div>';
+}
+function filterHist(f,btn){ document.querySelectorAll('.hist-tab').forEach(t=>t.classList.remove('active')); if(btn)btn.classList.add('active'); renderHist(f); }
+
+// ╔═══════════════════════════════════╗
+// ║  16. REAL-TIME CHAT               ║
+// ╚═══════════════════════════════════╝
+function renderChat(){
+  if(!CHATS.length){
+    CHATS=[
+      {from:'executor',text:'Salom! Buyurtmangizni qabul qildim.',time:'14:02'},
+      {from:'client',text:'Rahmat! Qancha vaqtda yetib kelasiz?',time:'14:03'},
+      {from:'executor',text:'15 daqiqada yetib boraman. Manzilni tasdiqlaysizmi?',time:'14:04'},
+      {from:'client',text:'Ha, Chilonzor 7-kvartal, 12-uy. Kutaman!',time:'14:05'}
+    ]; save();
+  }
+  const el=document.getElementById('chat-area');
+  el.innerHTML=CHATS.map(m=>{
+    const mine=(APP.role==='client'&&m.from==='client')||(APP.role==='executor'&&m.from==='executor');
+    return `<div class="bubble ${mine?'out':'in'}">${m.text}</div><div class="bubble-time${mine?' right':''}">${m.time}</div>`;
+  }).join('');
+  el.scrollTop=el.scrollHeight;
+}
+function sendMsg(){
+  const inp=document.getElementById('chat-inp'), txt=inp.value.trim(); if(!txt)return;
+  const now=new Date(), t=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+  CHATS.push({from:APP.role,text:txt,time:t}); save(); renderChat(); inp.value='';
+  // Auto-reply simulyatsiyasi (Firebase real-time bilan almashtiriladi)
+  setTimeout(()=>{
+    const replies=['Tushundim, rahmat!','Yaxshi, hozir yo\'lga chiqdim!','OK, kutib turaveraman.','Albatta, tez orada bo\'laman.','Ha, manzilga yaqinlashyapman.','Ajoyib, ko\'rishguncha!'];
+    const other=APP.role==='client'?'executor':'client';
+    const rt=new Date();
+    CHATS.push({from:other,text:replies[Math.floor(Math.random()*replies.length)],time:String(rt.getHours()).padStart(2,'0')+':'+String(rt.getMinutes()).padStart(2,'0')});
+    save(); renderChat();
+  },1000+Math.random()*1500);
+}
+
+// ╔═══════════════════════════════════╗
+// ║  17. DYNAMIC DATES                ║
+// ╚═══════════════════════════════════╝
+function setDates(){
+  const mo=['yan','fev','mar','apr','may','iyun','iyul','avg','sen','okt','noy','dek'];
+  const d2=new Date();d2.setDate(d2.getDate()+2);
+  const d3=new Date();d3.setDate(d3.getDate()+3);
+  document.getElementById('dc2').textContent=d2.getDate()+'-'+mo[d2.getMonth()];
+  document.getElementById('dc3').textContent=d3.getDate()+'-'+mo[d3.getMonth()];
+}
+
+// ╔═══════════════════════════════════╗
+// ║  18. FIREBASE INTEGRATION GUIDE   ║
+// ╚═══════════════════════════════════╝
+/*
+ * ══════════════════════════════════════════════
+ *  FIREBASE / SUPABASE ULASH QO'LLANMASI
+ * ══════════════════════════════════════════════
+ *
+ * 1-QADAM: SDK qo'shish (</head> dan oldin):
+ *   <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"><\/script>
+ *   <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"><\/script>
+ *   <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"><\/script>
+ *
+ * 2-QADAM: Firebase konfiguratsiyasi:
+ *   const firebaseConfig = {
+ *     apiKey: "YOUR_API_KEY",
+ *     authDomain: "your-app.firebaseapp.com",
+ *     projectId: "your-project-id",
+ *     storageBucket: "your-app.appspot.com",
+ *     messagingSenderId: "123456789",
+ *     appId: "your-app-id"
+ *   };
+ *   firebase.initializeApp(firebaseConfig);
+ *   const db = firebase.firestore();
+ *   const auth = firebase.auth();
+ *
+ * 3-QADAM: Auth (avtorizatsiya):
+ *   // Ro'yxatdan o'tish
+ *   async function register(email, pass) {
+ *     const cred = await auth.createUserWithEmailAndPassword(email, pass);
+ *     await db.collection('users').doc(cred.user.uid).set({
+ *       role: APP.role, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+ *     });
+ *   }
+ *   // Kirish
+ *   async function login(email, pass) {
+ *     return auth.signInWithEmailAndPassword(email, pass);
+ *   }
+ *
+ * 4-QADAM: Buyurtmalarni Firestoreda saqlash:
+ *   // placeOrder() ichida save() o'rniga:
+ *   async function saveOrderToFirestore(order) {
+ *     return db.collection('orders').add({
+ *       ...order,
+ *       userId: auth.currentUser.uid,
+ *       createdAt: firebase.firestore.FieldValue.serverTimestamp()
+ *     });
+ *   }
+ *
+ * 5-QADAM: Real-time listening:
+ *   // Buyurtmalarni kuzatish
+ *   db.collection('orders')
+ *     .where('userId', '==', auth.currentUser.uid)
+ *     .orderBy('createdAt','desc')
+ *     .onSnapshot(snap => {
+ *       ORDERS = snap.docs.map(d => ({id: d.id, ...d.data()}));
+ *       renderHist('all'); renderAdmin();
+ *     });
+ *
+ * 6-QADAM: Chat (real-time):
+ *   function listenChat(orderId) {
+ *     return db.collection('chats').doc(orderId).collection('messages')
+ *       .orderBy('timestamp')
+ *       .onSnapshot(snap => {
+ *         CHATS = snap.docs.map(d => d.data());
+ *         renderChat();
+ *       });
+ *   }
+ *   async function sendFirebaseMsg(orderId, msg) {
+ *     return db.collection('chats').doc(orderId).collection('messages').add({
+ *       ...msg,
+ *       timestamp: firebase.firestore.FieldValue.serverTimestamp()
+ *     });
+ *   }
+ *
+ * 7-QADAM: Firestore xavfsizlik qoidalari:
+ *   rules_version = '2';
+ *   service cloud.firestore {
+ *     match /databases/{database}/documents {
+ *       match /users/{userId} {
+ *         allow read, write: if request.auth.uid == userId;
+ *       }
+ *       match /orders/{orderId} {
+ *         allow read: if request.auth != null;
+ *         allow create: if request.auth != null;
+ *         allow update: if request.auth != null;
+ *       }
+ *       match /chats/{chatId}/messages/{msgId} {
+ *         allow read, write: if request.auth != null;
+ *       }
+ *       match /executors/{execId} {
+ *         allow read: if true;
+ *         allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+ *       }
+ *     }
+ *   }
+ *
+ * SUPABASE ALTERNATIVA:
+ *   import { createClient } from '@supabase/supabase-js'
+ *   const supabase = createClient('YOUR_URL', 'YOUR_ANON_KEY')
+ *   // Insert: await supabase.from('orders').insert(order)
+ *   // Select: const {data} = await supabase.from('orders').select('*')
+ *   // Realtime: supabase.channel('orders').on('postgres_changes',{...},cb).subscribe()
+ *
+ * Hozircha barcha ma'lumotlar localStorage orqali saqlanadi.
+ * Firebase API kalitlarini qo'shgach, save() → Firestore, load() → onSnapshot
+ * ══════════════════════════════════════════════
+ */
+
+// ╔═══════════════════════════════════╗
+// ║  INIT                             ║
+// ╚═══════════════════════════════════╝
+load();
+renderServices();
+renderExecutors();
+recalcPrice();
+renderAIMatch();
+setDates();
+document.getElementById('room-count').textContent = APP.roomCount;
+
+// Auth: Sessiyani tekshirish
+if (loadSession()) {
+  // Foydalanuvchi oldin login qilgan — to'g'ridan-to'g'ri ilovaga o'tkazish
+  APP.role = AUTH.user.role || 'client';
+  document.getElementById('welcome-user').textContent = '👤 ' + AUTH.user.name;
+  if (AUTH.user.role === 'client') go(1);
+  else if (AUTH.user.role === 'executor') go(5);
+  else go(0);
+  requestGeo();
+} else {
+  // Yangi foydalanuvchi — Login ekranini ko'rsatish
+  showAuth('login');
+}
+</script>
+</body>
+</html>
